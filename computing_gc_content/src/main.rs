@@ -16,33 +16,29 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut len: u32 = 0;
 
     for line in reader.lines() {
-        match line {
-            Ok(line) => {
-                if line.starts_with(">") {
-                    if current_code != "" {
-                        let percentage: f64 = (gc_count as f64 / len as f64) * 100.0;
-                        if max_gc.1 < percentage {
-                            max_gc = (current_code, percentage);
-                        }
-                    }
-                    current_code = line.to_string();
-                    len = 0;
-                    gc_count = 0;
-                } else {
-                    if current_code == "" {
-                        return Err("Invalid file format".into());
-                    }
-                    for byte in line.into_bytes() {
-                        if byte == b'G' || byte == b'C' {
-                            gc_count += 1;
-                            len += 1;
-                        } else if byte == b'A' || byte == b'T' {
-                            len += 1;
-                        }
-                    }
+        let line = line?;
+        if line.starts_with(">") {
+            if current_code != "" {
+                let percentage: f64 = (gc_count as f64 / len as f64) * 100.0;
+                if max_gc.1 < percentage {
+                    max_gc = (current_code, percentage);
                 }
             }
-            Err(err) => return Err(Box::new(err)),
+            current_code = line[1..].to_string();
+            len = 0;
+            gc_count = 0;
+        } else {
+            if current_code == "" {
+                return Err("Invalid file format".into());
+            }
+            for byte in line.into_bytes() {
+                if byte == b'G' || byte == b'C' {
+                    gc_count += 1;
+                    len += 1;
+                } else if byte == b'A' || byte == b'T' {
+                    len += 1;
+                }
+            }
         }
     }
     if current_code != "" {
@@ -51,6 +47,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             max_gc = (current_code, percentage);
         }
     }
-    println!("{}\n{:.6}", max_gc.0[1..].to_string(), max_gc.1);
+    println!("{}\n{:.6}", max_gc.0, max_gc.1);
     Ok(())
 }
